@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package sinthanai.docstore.v1;
+
+option java_package = "ai.sinthanai.docstore.grpc.proto";
+option java_multiple_files = true;
+option java_outer_classname = "DocstoreProto";
+
+import "google/protobuf/timestamp.proto";
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum DocumentStatus {
+    DOCUMENT_STATUS_UNSPECIFIED = 0;
+    DOCUMENT_STATUS_PENDING = 1;
+    DOCUMENT_STATUS_PROCESSING = 2;
+    DOCUMENT_STATUS_INDEXED = 3;
+    DOCUMENT_STATUS_FAILED = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Domain messages
+// ---------------------------------------------------------------------------
+
+message Document {
+    string id = 1;
+    string external_id = 2;
+    string source = 3;
+    string content_type = 4;
+    DocumentStatus status = 5;
+    int32 chunk_count = 6;
+    string error_message = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
+}
+
+message Chunk {
+    string id = 1;
+    string document_id = 2;
+    int32 chunk_index = 3;
+    string text = 4;
+    int32 token_count = 5;
+    map<string, string> metadata = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Document RPCs
+// ---------------------------------------------------------------------------
+
+message RegisterDocumentRequest {
+    string external_id = 1;
+    string source = 2;
+    string content_type = 3;
+}
+
+message RegisterDocumentResponse {
+    Document document = 1;
+}
+
+message GetDocumentRequest {
+    string id = 1;
+}
+
+message GetDocumentResponse {
+    Document document = 1;
+}
+
+message GetDocumentByExternalIdRequest {
+    string external_id = 1;
+}
+
+message UpdateDocumentStatusRequest {
+    string id = 1;
+    DocumentStatus status = 2;
+    string error_message = 3;
+}
+
+message UpdateDocumentStatusResponse {
+    Document document = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Chunk RPCs
+// ---------------------------------------------------------------------------
+
+message StoreChunkRequest {
+    string document_id = 1;
+    int32 chunk_index = 2;
+    string text = 3;
+    int32 token_count = 4;
+    map<string, string> metadata = 5;
+}
+
+message StoreChunkResponse {
+    Chunk chunk = 1;
+}
+
+message GetChunkRequest {
+    string id = 1;
+}
+
+message GetChunkResponse {
+    Chunk chunk = 1;
+}
+
+message GetChunksByDocumentRequest {
+    string document_id = 1;
+}
+
+message DeleteChunksByDocumentRequest {
+    string document_id = 1;
+}
+
+message DeleteChunksByDocumentResponse {
+    int32 deleted_count = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Ops
+// ---------------------------------------------------------------------------
+
+message PingRequest {}
+
+message PingResponse {
+    string status = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
+
+service DocstoreService {
+    // Document management
+    rpc RegisterDocument(RegisterDocumentRequest) returns (RegisterDocumentResponse);
+    rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+    rpc GetDocumentByExternalId(GetDocumentByExternalIdRequest) returns (GetDocumentResponse);
+    rpc UpdateDocumentStatus(UpdateDocumentStatusRequest) returns (UpdateDocumentStatusResponse);
+
+    // Chunk management
+    rpc StoreChunk(StoreChunkRequest) returns (StoreChunkResponse);
+    rpc GetChunk(GetChunkRequest) returns (GetChunkResponse);
+    rpc GetChunksByDocument(GetChunksByDocumentRequest) returns (stream GetChunkResponse);
+    rpc DeleteChunksByDocument(DeleteChunksByDocumentRequest) returns (DeleteChunksByDocumentResponse);
+
+    // Ops
+    rpc Ping(PingRequest) returns (PingResponse);
+}
